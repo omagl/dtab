@@ -2,7 +2,6 @@ import copy
 import operator
 
 
-
 def drop_column(table:list, columns:any, inplace = True):
     if not isinstance(columns,list):
         columns = [columns]
@@ -183,8 +182,30 @@ def table_sort(table:list, inplace=True):
         t.sort(key=lambda x: tuple([ (y is not None, y) for x,y in x.items()]) )    
         return t
 
+"""
+def row_number_over(table, column_name, ascending=None):
+    if not isinstance(column_name, list):
+        column_name = [column_name]
+    if ascending is not None:
+        if not isinstance(ascending, list):
+            ascending = [ascending]
+    else:
+        ascending = []
+        for x in column_name:
+            ascending.append(True)
+    array = []
+    for index, row in enumerate(table):
+        t = {"##DTAB##INDEX": index}
+        for name in column_name:
+            t[name] = row[name]
+        array.append(t)
+    array.sort(key=lambda x: tuple([ (y is not None, y) for x,y in x.items()]) )   
+"""
 
-def disctinct_column_values(table, column_name, keepnone=False):
+
+
+
+def distinct_column_values(table, column_name, keepnone=False):
     array = {}
 
     if not isinstance(column_name, list):
@@ -203,7 +224,7 @@ def disctinct_column_values(table, column_name, keepnone=False):
         arr.sort(key=lambda x: (x is None,x))
         length = len(arr)
         index = 1
-        last_value= arr[0]
+        last_value= copy.deepcopy(arr[0])
         unique = []
         unique.append(last_value)
         while index < length:
@@ -213,7 +234,7 @@ def disctinct_column_values(table, column_name, keepnone=False):
                     if keepnone:
                         unique.append(value)
                 else:
-                    unique.append(value)
+                    unique.append(copy.deepcopy(value))
                 last_value = value
             index += 1
         result[name] = unique
@@ -296,10 +317,19 @@ if __name__ == "__main__":
     print(f"{t} {t[0]/(t[0]+t[1])}")
     t = column_count(table_leftjoin, condition=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 and x['priority'] is not None else False)
     print(f"{t} {t[0]/(t[0]+t[1])}")
-    u = disctinct_column_values(table_leftjoin, ['customer_id','sale'])
+    u = distinct_column_values(table_leftjoin, ['customer_id','sale','name','priority'])
     print(u)
-
-
+    """
+    last_value = table_leftjoin[0]['customer_id']
+    table_leftjoin[0]['post_rank_asc'] = 1
+    for i in range(1, len(table_leftjoin)):
+        if table_leftjoin[i]['customer_id'] == last_value:
+            table_leftjoin[i]['post_rank_asc'] = 1 + table_leftjoin[i-1]['post_rank_asc']
+        else:
+            table_leftjoin[i]['post_rank_asc'] = 1
+            last_value = table_leftjoin[i]['customer_id']
+    print_table(table_leftjoin)
+    """
 
     group_dict = groupby_column(table_leftjoin, 'customer_id')
     for customer_id, table in group_dict.items():

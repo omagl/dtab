@@ -1,6 +1,6 @@
 import copy
 
-def dropcolumn(table:list, columns:any, inplace = False):
+def drop_column(table:list, columns:any, inplace = False):
     if not isinstance(columns,list):
         columns = [columns]
     tab = []
@@ -18,7 +18,7 @@ def dropcolumn(table:list, columns:any, inplace = False):
         return tab
 
 
-def rename(table:list, names:dict, inplace:bool = False):
+def rename_column(table:list, names:dict, inplace:bool = False):
     tab = []
     for i,row in enumerate(table):
         t = {}
@@ -36,7 +36,7 @@ def rename(table:list, names:dict, inplace:bool = False):
         return None
     else:
         return tab
-def join(left:list, right:list, on:list, type:str='inner', suffix:str="1", prefix:str=None, keepkeys:bool=False, renameright:bool=False) ->  list:
+def join_tables(left:list, right:list, on:list, type:str='inner', suffix:str="1", prefix:str=None, keepkeys:bool=False, renameright:bool=False) ->  list:
     """Join two dict-tables (list of dicts)
 
     Args:
@@ -142,6 +142,8 @@ def column_avg(table, column_name, count_none=True):
         return None
     else:
         return sum/count
+
+
 def column_count(table, column_name):
     count = 0
     for row in table:
@@ -149,7 +151,8 @@ def column_count(table, column_name):
             count +=1
     return count
 
-def groupby(table, by):
+
+def groupby_column(table, by):
     d = {}
     for row in table:
         b = str(row[by])
@@ -158,6 +161,16 @@ def groupby(table, by):
         else:
             d[b].append(copy.deepcopy(row))
     return d
+
+def table_sort(table:list, inplace=True):
+    if inplace:
+        table.sort(key=lambda x: tuple([ (y is not None, y) for x,y in x.items()]) )    
+        return None
+    else:
+        t = copy.deepcopy(table)
+        t.sort(key=lambda x: tuple([ (y is not None, y) for x,y in x.items()]) )    
+        return t
+
 
 
 if __name__ == "__main__":
@@ -168,40 +181,47 @@ if __name__ == "__main__":
     print("Demo")
     print("----------------------------------")
     table1 = [
-        {"customer_id": 1, "name": "code inc" },
-        {"customer_id": 2, "name": "python inc" },
-        {"customer_id": 3, "name": "c++ inc" },
-        {"customer_id": 4, "name": "c++ inc" },
+        {"customer_id": 4, "name": "Four Inc" },
+        {"customer_id": 1, "name": "One Inc" },
+        {"customer_id": 3, "name": "Three Inc" },
+        {"customer_id": 2, "name": "Two Inc" },
     ]
     table2 = [
-        {"customer_id": 1, "sale": 100, },
-        {"customer_id": 1, "sale": 150 },
-        {"customer_id": 2, "sale": 20000 },
-        {"customer_id": 2, "sale": 1400 },
-        {"customer_id": 2, "sale": 2500 },
-        {"customer_id": 2, "sale": 60 },
-        {"customer_id": 3, "sale": 3400 },
+        {"customer_id": 1, "sale": 100, "priority": 1},
+        {"customer_id": 1, "sale": 150, "priority": None },
+        {"customer_id": 1, "sale": 150, "priority": 2 },
+        {"customer_id": 2, "sale": 20000, "priority": 1 },
+        {"customer_id": 2, "sale": 1400, "priority": 1 },
+        {"customer_id": 2, "sale": 2500, "priority": 1 },
+        {"customer_id": 2, "sale": 60, "priority": 1 },
+        {"customer_id": 3, "sale": 3400, "priority": 1 },
+        {"customer_id": 3, "sale": None, "priority": 1 },
     ]
     
-    table_innerjoin =join(left=table1, right=table2, on=['customer_id'])
+    table_innerjoin =join_tables(left=table1, right=table2, on=['customer_id'])
     print("Inner join -----------------------")
     print_table(table_innerjoin)
     print("Renamed columns ------------------")
-    rename(table_innerjoin, {"customer_id": "ID", "name": "COMPANY"}, inplace=True)
+    rename_column(table_innerjoin, {"customer_id": "ID", "name": "COMPANY"}, inplace=True)
     print_table(table_innerjoin)
     print("Drop columns ---------------------")
-    dropcolumn(table_innerjoin, ['sale','COMPANY'], inplace=True)
+    drop_column(table_innerjoin, ['sale','COMPANY'], inplace=True)
     print_table(table_innerjoin)
 
 
-    table_leftjoin = join(left=table1, right=table2, on=['customer_id'],type="left")
+    table_leftjoin = join_tables(left=table1, right=table2, on=['customer_id'],type="left")
     print("Left join ------------------------")
+    #table_leftjoin.sort(key=lambda x: (x['sale'] is None, x['sale'], x['priority'] is not None, x['priority']))
+    print_table(table_leftjoin)
+    table_sort(table_leftjoin)
+    print("sorted ---------------------------")
     print_table(table_leftjoin)
 
-    group_dict = groupby(table_leftjoin, 'customer_id')
-    for customer_id, table in group_dict.items():
-        sum_sales=column_sum(table, 'sale')
-        nr_of_sales=column_count(table,'sale')
-        print(f"customer_id={customer_id}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
+
+    #group_dict = groupby_column(table_leftjoin, 'customer_id')
+    #for customer_id, table in group_dict.items():
+    #    sum_sales=column_sum(table, 'sale')
+    #    nr_of_sales=column_count(table,'sale')
+    #    print(f"customer_id={customer_id}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
 
     

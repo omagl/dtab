@@ -184,8 +184,63 @@ def table_sort(table:list, inplace=True):
         return t
 
 
+def disctinct_column_values(table, column_name, keepnone=False):
+    array = {}
+
+    if not isinstance(column_name, list):
+        column_name = [column_name]
+
+    for name in column_name:
+        array[name] = []
+
+    for row in table:
+        for name in column_name:
+            array[name].append(row[name])
+    
+    result = {}
+    for name in column_name:
+        arr = array[name]
+        arr.sort(key=lambda x: (x is None,x))
+        length = len(arr)
+        index = 1
+        last_value= arr[0]
+        unique = []
+        unique.append(last_value)
+        while index < length:
+            value = arr[index]
+            if last_value != value:
+                if value is None:
+                    if keepnone:
+                        unique.append(value)
+                else:
+                    unique.append(value)
+                last_value = value
+            index += 1
+        result[name] = unique
+    if len(column_name) == 1:
+        return result[column_name[0]]
+    else:
+        return result
 
 
+    
+    length = len(array)
+    index = 1
+    last_value = array[0]
+    unique = []
+    unique.append(last_value)
+    
+    while index < length:
+        value = array[index]
+        if last_value != value:
+            if value is None:
+                if keepnone:
+                    unique.append(value)
+            else:
+                unique.append(value)
+            last_value = value
+        index += 1
+    return unique
 
 
 if __name__ == "__main__":
@@ -239,6 +294,11 @@ if __name__ == "__main__":
     print(f"{t} {t[0]/(t[0]+t[1])}")
     t = column_count(table_leftjoin, condition=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 else False)
     print(f"{t} {t[0]/(t[0]+t[1])}")
+    t = column_count(table_leftjoin, condition=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 and x['priority'] is not None else False)
+    print(f"{t} {t[0]/(t[0]+t[1])}")
+    u = disctinct_column_values(table_leftjoin, ['customer_id','sale'])
+    print(u)
+
 
 
     group_dict = groupby_column(table_leftjoin, 'customer_id')

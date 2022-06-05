@@ -1,6 +1,9 @@
 import copy
+import operator
 
-def drop_column(table:list, columns:any, inplace = False):
+
+
+def drop_column(table:list, columns:any, inplace = True):
     if not isinstance(columns,list):
         columns = [columns]
     tab = []
@@ -18,7 +21,7 @@ def drop_column(table:list, columns:any, inplace = False):
         return tab
 
 
-def rename_column(table:list, names:dict, inplace:bool = False):
+def rename_column(table:list, names:dict, inplace:bool = True):
     tab = []
     for i,row in enumerate(table):
         t = {}
@@ -143,14 +146,23 @@ def column_avg(table, column_name, count_none=True):
     else:
         return sum/count
 
-
-def column_count(table, column_name):
-    count = 0
+def column_count(table:list, column_name:str=None, func=None) -> tuple:
+    count_true =  0
+    count_false = 0
+    if func is None:
+        func = lambda x: False if x is None else True
     for row in table:
-        if row[column_name] is not None:
-            count +=1
-    return count
+        test = False
+        if column_name is not None:
+            test = func(row[column_name])
+        else:
+            test =  func(row)
 
+        if test:
+            count_true += 1
+        else:
+            count_false += 1
+    return (count_true, count_false)
 
 def groupby_column(table, by):
     d = {}
@@ -170,6 +182,9 @@ def table_sort(table:list, inplace=True):
         t = copy.deepcopy(table)
         t.sort(key=lambda x: tuple([ (y is not None, y) for x,y in x.items()]) )    
         return t
+
+
+
 
 
 
@@ -216,12 +231,21 @@ if __name__ == "__main__":
     table_sort(table_leftjoin)
     print("sorted ---------------------------")
     print_table(table_leftjoin)
+    t = column_count(table_leftjoin, 'sale')
+    print(t)
+    nz = lambda x: 0 if x is None else x
+
+    t = column_count(table_leftjoin, column_name='sale', func=lambda x: True if nz(x)<2000 else False)
+    print(f"{t} {t[0]/(t[0]+t[1])}")
+    t = column_count(table_leftjoin, func=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 else False)
+    print(f"{t} {t[0]/(t[0]+t[1])}")
 
 
-    #group_dict = groupby_column(table_leftjoin, 'customer_id')
-    #for customer_id, table in group_dict.items():
-    #    sum_sales=column_sum(table, 'sale')
-    #    nr_of_sales=column_count(table,'sale')
-    #    print(f"customer_id={customer_id}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
+    group_dict = groupby_column(table_leftjoin, 'customer_id')
+    for customer_id, table in group_dict.items():
+        sum_sales=column_sum(table, 'sale')
+        nr_of_sales=column_count(table,'sale')[0]
+        print(f"customer_id={customer_id}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
+
 
     

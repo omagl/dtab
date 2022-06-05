@@ -146,17 +146,17 @@ def column_avg(table, column_name, count_none=True):
     else:
         return sum/count
 
-def column_count(table:list, column_name:str=None, func=None) -> tuple:
+def column_count(table:list, column_name:str=None, condition=None) -> tuple:
     count_true =  0
     count_false = 0
-    if func is None:
-        func = lambda x: False if x is None else True
+    if condition is None:
+        condition = lambda x: False if x is None else True
     for row in table:
         test = False
         if column_name is not None:
-            test = func(row[column_name])
+            test = condition(row[column_name])
         else:
-            test =  func(row)
+            test =  condition(row)
 
         if test:
             count_true += 1
@@ -235,9 +235,9 @@ if __name__ == "__main__":
     print(t)
     nz = lambda x: 0 if x is None else x
 
-    t = column_count(table_leftjoin, column_name='sale', func=lambda x: True if nz(x)<2000 else False)
+    t = column_count(table_leftjoin, column_name='sale', condition=lambda x: True if nz(x)<2000 else False)
     print(f"{t} {t[0]/(t[0]+t[1])}")
-    t = column_count(table_leftjoin, func=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 else False)
+    t = column_count(table_leftjoin, condition=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 else False)
     print(f"{t} {t[0]/(t[0]+t[1])}")
 
 

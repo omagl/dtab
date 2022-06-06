@@ -173,6 +173,12 @@ def table_sort(table:list, inplace=True):
         return t
 
 class Analytics:
+    def keyvalue(partition_tuple, name):
+        for t in partition_tuple:
+            if t[0] == name:
+                return t[1]
+        return None
+
     def partition_by(table, by):
         d = {}
         for row in table:
@@ -267,6 +273,7 @@ def distinct_column_values(table, column_name, keepnone=False):
     else:
         return result
 
+
 if __name__ == "__main__":
     def print_table(table):
         for row in table:
@@ -352,10 +359,10 @@ if __name__ == "__main__":
     print_table(table_leftjoin)    
     print("Using partitions ------------------- ")   
     pdict = Analytics.partition_by(table_leftjoin, by=['customer_id'])
-    for customer_id, table in pdict.items():
+    for partitiontuple, table in pdict.items():
         sum_sales=column_sum(table, 'sale')
         nr_of_sales=column_count(table,'sale')[0]
-        print(f"customer_id={customer_id[0][1]}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
+        print(f"customer_id={Analytics.keyvalue(partitiontuple, 'customer_id')}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
 
 
 

@@ -359,10 +359,16 @@ if __name__ == "__main__":
     print_table(table_leftjoin)    
     print("Using partitions ------------------- ")   
     pdict = Analytics.partition_by(table_leftjoin, by=['customer_id'])
+    agg_features = {}
     for partitiontuple, table in pdict.items():
         sum_sales=column_sum(table, 'sale')
         nr_of_sales=column_count(table,'sale')[0]
-        print(f"customer_id={Analytics.keyvalue(partitiontuple, 'customer_id')}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
+        cid = Analytics.keyvalue(partitiontuple, 'customer_id')
+        #print(f"customer_id={cid}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
+        agg_features[f'customer_{cid}_sumsales'] = sum_sales
+        agg_features[f'customer_{cid}_count_sales'] = nr_of_sales
+
+    print(sorted(agg_features))
 
 
 

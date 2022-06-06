@@ -346,17 +346,11 @@ if __name__ == "__main__":
         for x in t:
             print(x)
         print_table((('customer_id', 1),))
-    Analytics.dense_rank(table_leftjoin, by=['customer_id'], orderby={"sale": True})
-    print("dense_rank")
-    print_table(table_leftjoin)
-   
-
-    print("rownum_rank")
+    print("Ranking-------------------------------")        
+    Analytics.dense_rank(table_leftjoin, by=['customer_id'], orderby={"sale": True},rankname="dense_rank")
     Analytics.row_number(table_leftjoin, by=['customer_id'], orderby={"sale": True}, rankname="rownum_rank")    
     print_table(table_leftjoin)    
-    #print_table(t[(('customer_id', 1),)])
-    
-    #group_dict = groupby_column(table_leftjoin, 'customer_id')
+    print("Using partitions ------------------- ")   
     pdict = Analytics.partition_by(table_leftjoin, by=['customer_id'])
     for customer_id, table in pdict.items():
         sum_sales=column_sum(table, 'sale')

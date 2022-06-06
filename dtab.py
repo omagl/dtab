@@ -163,16 +163,6 @@ def column_count(table:list, column_name:str=None, condition=None) -> tuple:
             count_false += 1
     return (count_true, count_false)
 
-def groupby_column(table, by):
-    d = {}
-    for row in table:
-        b = str(row[by])
-        if b not in d:
-            d[b] = [copy.deepcopy(row)]
-        else:
-            d[b].append(copy.deepcopy(row))
-    return d
-
 def table_sort(table:list, inplace=True):
     if inplace:
         table.sort(key=lambda x: tuple([ (y is not None, y) for x,y in x.items()]) )    
@@ -182,28 +172,62 @@ def table_sort(table:list, inplace=True):
         t.sort(key=lambda x: tuple([ (y is not None, y) for x,y in x.items()]) )    
         return t
 
-"""
-def row_number_over(table, column_name, ascending=None):
-    if not isinstance(column_name, list):
-        column_name = [column_name]
-    if ascending is not None:
-        if not isinstance(ascending, list):
-            ascending = [ascending]
-    else:
-        ascending = []
-        for x in column_name:
-            ascending.append(True)
-    array = []
-    for index, row in enumerate(table):
-        t = {"##DTAB##INDEX": index}
-        for name in column_name:
-            t[name] = row[name]
-        array.append(t)
-    array.sort(key=lambda x: tuple([ (y is not None, y) for x,y in x.items()]) )   
-"""
+class Analytics:
+    def partition_by(table, by):
+        d = {}
+        for row in table:
+            t = tuple([ (x,row[x]) for x in by])
+            if (t not in d):
+                d[t] = [row]
+            else:
+                d[t].append(row)
+        return d    
+
+    __lambda_rank_sort = lambda x,orderby: tuple([ 
+        ( 
+            (
+                (v is not None) if orderby[k] else (v is None)
+            ),
+            (v if orderby[k] else (v if v is None else -v))
+        )
+        for k,v in x.items() if k in orderby
+    ])
+
+    def row_number(table, by, orderby, rankname="rank"):
+        t = Analytics.partition_by(table, by)
+        for key,tab in t.items():
+            tab.sort(
+                key=lambda x: Analytics.__lambda_rank_sort(x,orderby)
+            ) 
+            for i in range(0,len(tab)):
+                tab[i][rankname] = i+1
+
+    def dense_rank(table, by, orderby, rankname="rank"):
+        """orderby is a dict, key is column_name and boolean as value
+        True = Ascending, False=Descending
+        Only supports Descending numbers, crash on everything else
+        that cant be negative. Probably solvable by using a comparator
 
 
-
+        Args:
+            table (_type_): _description_
+            by (_type_): _description_
+            orderby (_type_): _description_
+            rankname (str, optional): _description_. Defaults to "rank".
+        """
+        t = Analytics.partition_by(table, by)
+        for key,tab in t.items():
+            tab.sort(
+                key=lambda x: Analytics.__lambda_rank_sort(x,orderby)
+            ) 
+            lval = { k:tab[0][k] for k in orderby }
+            rank = 1
+            tab[0][rankname] = rank
+            for i in range(1,len(tab)):
+                val = { k:tab[i][k] for k in orderby }
+                if lval != val:
+                    rank += 1
+                tab[i][rankname] = rank
 
 def distinct_column_values(table, column_name, keepnone=False):
     array = {}
@@ -243,27 +267,6 @@ def distinct_column_values(table, column_name, keepnone=False):
     else:
         return result
 
-
-    
-    length = len(array)
-    index = 1
-    last_value = array[0]
-    unique = []
-    unique.append(last_value)
-    
-    while index < length:
-        value = array[index]
-        if last_value != value:
-            if value is None:
-                if keepnone:
-                    unique.append(value)
-            else:
-                unique.append(value)
-            last_value = value
-        index += 1
-    return unique
-
-
 if __name__ == "__main__":
     def print_table(table):
         for row in table:
@@ -287,6 +290,7 @@ if __name__ == "__main__":
         {"customer_id": 2, "sale": 60, "priority": 1 },
         {"customer_id": 3, "sale": 3400, "priority": 1 },
         {"customer_id": 3, "sale": None, "priority": 1 },
+        {"customer_id": 3, "sale": None, "priority": 2 },
     ]
     
     table_innerjoin =join_tables(left=table1, right=table2, on=['customer_id'])
@@ -304,38 +308,63 @@ if __name__ == "__main__":
     print("Left join ------------------------")
     #table_leftjoin.sort(key=lambda x: (x['sale'] is None, x['sale'], x['priority'] is not None, x['priority']))
     print_table(table_leftjoin)
-    table_sort(table_leftjoin)
-    print("sorted ---------------------------")
-    print_table(table_leftjoin)
-    t = column_count(table_leftjoin, 'sale')
-    print(t)
-    nz = lambda x: 0 if x is None else x
+    if  1 == 0:
+        table_sort(table_leftjoin)
+        print("sorted ---------------------------")
+        print_table(table_leftjoin)
+        t = column_count(table_leftjoin, 'sale')
+        print(t)
+        nz = lambda x: 0 if x is None else x
 
-    t = column_count(table_leftjoin, column_name='sale', condition=lambda x: True if nz(x)<2000 else False)
-    print(f"{t} {t[0]/(t[0]+t[1])}")
-    t = column_count(table_leftjoin, condition=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 else False)
-    print(f"{t} {t[0]/(t[0]+t[1])}")
-    t = column_count(table_leftjoin, condition=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 and x['priority'] is not None else False)
-    print(f"{t} {t[0]/(t[0]+t[1])}")
-    u = distinct_column_values(table_leftjoin, ['customer_id','sale','name','priority'])
-    print(u)
-    """
-    last_value = table_leftjoin[0]['customer_id']
-    table_leftjoin[0]['post_rank_asc'] = 1
-    for i in range(1, len(table_leftjoin)):
-        if table_leftjoin[i]['customer_id'] == last_value:
-            table_leftjoin[i]['post_rank_asc'] = 1 + table_leftjoin[i-1]['post_rank_asc']
-        else:
-            table_leftjoin[i]['post_rank_asc'] = 1
-            last_value = table_leftjoin[i]['customer_id']
-    print_table(table_leftjoin)
-    """
+        t = column_count(table_leftjoin, column_name='sale', condition=lambda x: True if nz(x)<2000 else False)
+        print(f"{t} {t[0]/(t[0]+t[1])}")
+        t = column_count(table_leftjoin, condition=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 else False)
+        print(f"{t} {t[0]/(t[0]+t[1])}")
+        t = column_count(table_leftjoin, condition=lambda x: True if nz(x['sale'])>=100 and nz(x['sale']) <= 1400 and x['priority'] is not None else False)
+        print(f"{t} {t[0]/(t[0]+t[1])}")
+        u = distinct_column_values(table_leftjoin, ['customer_id','sale','name','priority'])
+        print(u)
+        """
+        last_value = table_leftjoin[0]['customer_id']
+        table_leftjoin[0]['post_rank_asc'] = 1
+        for i in range(1, len(table_leftjoin)):
+            if table_leftjoin[i]['customer_id'] == last_value:
+                table_leftjoin[i]['post_rank_asc'] = 1 + table_leftjoin[i-1]['post_rank_asc']
+            else:
+                table_leftjoin[i]['post_rank_asc'] = 1
+                last_value = table_leftjoin[i]['customer_id']
+        print_table(table_leftjoin)
+        """
 
-    group_dict = groupby_column(table_leftjoin, 'customer_id')
-    for customer_id, table in group_dict.items():
+        t = Analytics.partition_by(table_leftjoin, by=['customer_id','sale'])
+        #print(t[(1,150)])
+        print(t[(("customer_id",1),("sale",150))])
+        for x in t:
+            print(x)
+        print(t[(("customer_id",3),("sale",None))])
+        t = Analytics.partition_by(table_leftjoin, by=['customer_id'])
+        for x in t:
+            print(x)
+        print_table((('customer_id', 1),))
+    Analytics.dense_rank(table_leftjoin, by=['customer_id'], orderby={"sale": True})
+    print("dense_rank")
+    print_table(table_leftjoin)
+   
+
+    print("rownum_rank")
+    Analytics.row_number(table_leftjoin, by=['customer_id'], orderby={"sale": True}, rankname="rownum_rank")    
+    print_table(table_leftjoin)    
+    #print_table(t[(('customer_id', 1),)])
+    
+    #group_dict = groupby_column(table_leftjoin, 'customer_id')
+    pdict = Analytics.partition_by(table_leftjoin, by=['customer_id'])
+    for customer_id, table in pdict.items():
         sum_sales=column_sum(table, 'sale')
         nr_of_sales=column_count(table,'sale')[0]
-        print(f"customer_id={customer_id}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
+        print(f"customer_id={customer_id[0][1]}, sum_sales={sum_sales}, nr_of_sales={nr_of_sales}")
+
 
 
     
+
+

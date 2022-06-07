@@ -1,6 +1,12 @@
 import copy
 import operator
 
+def nonevalue(value1:any, value2:any=0):
+    if value1 is None:
+        return value2
+    else:
+        return value1
+
 
 def drop_column(table:list, columns:any, inplace = True):
     if not isinstance(columns,list):
@@ -96,22 +102,20 @@ def join_tables(left:list, right:list, on:list, type:str='inner', suffix:str="1"
         pass
     return result
     
-def column_max(table:list, column_name:str) -> any:
-    t:any = table[0][column_name]
+def column_max(table:list, column_name:str, nonevalue:any) -> any:
+    t:any = nonevalue(table[0][column_name], nonevalue)
     for row in table:
-        value:any = row[column_name] 
-        if value:
-            if value > t:
-                t = value
+        value:any = __nvl(row[column_name] ,nonevalue)
+        if value > t:
+            t = value
     return t
 
-def column_min(table:list, column_name:str) -> any:
-    t:any = table[0][column_name]
+def column_min(table:list, column_name:str, nonevalue:any) -> any:
+    t:any = nonevalue(table[0][column_name], nonevalue)
     for row in table:
-        value:any = row[column_name] 
-        if value:
-            if value < t:
-                t = value
+        value:any = nonevalue(row[column_name], nonevalue)
+        if value < t:
+            t = value
     return t
 
 
@@ -145,16 +149,38 @@ def column_avg(table, column_name, count_none=True):
     else:
         return sum/count
 
-def column_count(table:list, column_name:str=None, condition=None) -> tuple:
+def column_count(table:list, column_name:str=None, condition=None, filter=None) -> tuple:
+    """
+    If column_name is used, the lambda in condition and filter gets the column_name
+    as argument. If no column_name is used, the lambdas get row as argument.
+    That is, only use column_name for simple counts
+
+    Args:
+        table (list): _description_
+        column_name (str, optional): _description_. Defaults to None.
+        condition (_type_, optional): _description_. Defaults to None.
+        filter (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        tuple: _description_
+    """
     count_true =  0
     count_false = 0
     if condition is None:
         condition = lambda x: False if x is None else True
+    if filter is None:
+        filter = lambda x: True
     for row in table:
         test = False
         if column_name is not None:
+            if not filter(row[column_name]):
+                # skip row
+                continue
             test = condition(row[column_name])
         else:
+            if not filter(row):
+                # skip row
+                continue
             test =  condition(row)
 
         if test:
@@ -356,7 +382,21 @@ if __name__ == "__main__":
     print("Ranking-------------------------------")        
     Analytics.dense_rank(table_leftjoin, by=['customer_id'], orderby={"sale": True},rankname="dense_rank")
     Analytics.row_number(table_leftjoin, by=['customer_id'], orderby={"sale": True}, rankname="rownum_rank")    
+    stats = column_count(
+        table_leftjoin,
+        condition=lambda x: True if (nonevalue(x['sale'])>1000) else False,
+        filter=lambda x: True if x['sale'] is not None else False
+        )
+    stats2 = column_count(
+        table_leftjoin,
+        column_name='sale',
+        )
+    print(f"Count of sales over 1000={stats[0]}, sales upto 1000={stats[1]}")
+    print(f"Count of sales not null={stats2[0]}, sales that is null={stats2[1]}")
     print_table(table_leftjoin)    
+    
+    
+
     print("Using partitions ------------------- ")   
     pdict = Analytics.partition_by(table_leftjoin, by=['customer_id'])
     agg_features = {}

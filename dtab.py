@@ -1,7 +1,7 @@
 import copy
 import operator
 
-def nonevalue(value1:any, value2:any=0):
+def nvalue(value1:any, value2:any=0):
     if value1 is None:
         return value2
     else:
@@ -103,17 +103,17 @@ def join_tables(left:list, right:list, on:list, type:str='inner', suffix:str="1"
     return result
     
 def column_max(table:list, column_name:str, nonevalue:any) -> any:
-    t:any = nonevalue(table[0][column_name], nonevalue)
+    t:any = nvalue(table[0][column_name], nonevalue)
     for row in table:
-        value:any = __nvl(row[column_name] ,nonevalue)
+        value:any = nvalue(row[column_name] ,nonevalue)
         if value > t:
             t = value
     return t
 
 def column_min(table:list, column_name:str, nonevalue:any) -> any:
-    t:any = nonevalue(table[0][column_name], nonevalue)
+    t:any = nvalue(table[0][column_name], nonevalue)
     for row in table:
-        value:any = nonevalue(row[column_name], nonevalue)
+        value:any = nvalue(row[column_name], nonevalue)
         if value < t:
             t = value
     return t
@@ -373,7 +373,7 @@ if __name__ == "__main__":
     Analytics.row_number(table_leftjoin, by=['customer_id'], orderby={"sale": True}, rankname="rownum_rank")    
     stats = column_count(
         table_leftjoin,
-        condition=lambda x: True if (nonevalue(x['sale'])>1000) else False,
+        condition=lambda x: True if (nvalue(x['sale'])>1000) else False,
         filter=lambda x: True if x['sale'] is not None else False
         )
     stats2 = column_count(

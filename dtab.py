@@ -357,17 +357,6 @@ if __name__ == "__main__":
         print(f"{t} {t[0]/(t[0]+t[1])}")
         u = distinct_column_values(table_leftjoin, ['customer_id','sale','name','priority'])
         print(u)
-        """
-        last_value = table_leftjoin[0]['customer_id']
-        table_leftjoin[0]['post_rank_asc'] = 1
-        for i in range(1, len(table_leftjoin)):
-            if table_leftjoin[i]['customer_id'] == last_value:
-                table_leftjoin[i]['post_rank_asc'] = 1 + table_leftjoin[i-1]['post_rank_asc']
-            else:
-                table_leftjoin[i]['post_rank_asc'] = 1
-                last_value = table_leftjoin[i]['customer_id']
-        print_table(table_leftjoin)
-        """
 
         t = Analytics.partition_by(table_leftjoin, by=['customer_id','sale'])
         #print(t[(1,150)])
@@ -394,8 +383,6 @@ if __name__ == "__main__":
     print(f"Count of sales over 1000={stats[0]}, sales upto 1000={stats[1]}")
     print(f"Count of sales not null={stats2[0]}, sales that is null={stats2[1]}")
     print_table(table_leftjoin)    
-    
-    
 
     print("Using partitions ------------------- ")   
     pdict = Analytics.partition_by(table_leftjoin, by=['customer_id'])

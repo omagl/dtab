@@ -299,6 +299,44 @@ def distinct_column_values(table, column_name, keepnone=False):
     else:
         return result
 
+def value_within(value, **kwargs):
+    bool_left = False
+    bool_right = False
+    if "_above" in kwargs:
+        left = kwargs['_above'] 
+        if left is None or value > left:
+            bool_left= True
+        else:
+            bool_left = False
+    elif "_from" in kwargs:
+        left = kwargs['_from']
+        if left is None or value >= left:
+            bool_left = True
+        else:
+            bool_left = True
+    else:
+        raise ValueError("No left limit")
+    if "_below" in kwargs:
+        right = kwargs["_below"]
+        if right is None or value < right:
+            bool_right = True
+        else:
+            bool_right = False
+    elif "_to" in kwargs:
+        right = kwargs["_to"]
+        if right is None or value <= right:
+            bool_right = True
+        else:
+            bool_right = False
+    else:
+        raise ValueError("No right limit")
+    return bool_left and bool_right
+
+
+
+
+
+
 
 if __name__ == "__main__":
     def print_table(table):
@@ -396,8 +434,8 @@ if __name__ == "__main__":
         agg_features[f'customer_{cid}_count_sales'] = nr_of_sales
 
     print(sorted(agg_features))
-
-
+    print(value_within(6,_above=4, _to=None))
+    print(value_within(4,**{"_above": None, "_to":5}))
 
     
 

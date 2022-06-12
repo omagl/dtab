@@ -259,6 +259,7 @@ class Analytics:
                 val = { k:tab[i][k] for k in orderby }
                 if lval != val:
                     rank += 1
+                    lval = val
                 tab[i][rankname] = rank
 
 def distinct_column_values(table, column_name, keepnone=False):
@@ -302,28 +303,29 @@ def distinct_column_values(table, column_name, keepnone=False):
 def value_within(value, **kwargs):
     bool_left = False
     bool_right = False
-    if "_above" in kwargs:
-        left = kwargs['_above'] 
+    if "Above" in kwargs:
+        left = kwargs['Above'] 
         if left is None or value > left:
             bool_left= True
         else:
             bool_left = False
-    elif "_from" in kwargs:
-        left = kwargs['_from']
+    elif "From" in kwargs:
+        left = kwargs['From']
         if left is None or value >= left:
             bool_left = True
         else:
             bool_left = True
     else:
         raise ValueError("No left limit")
-    if "_below" in kwargs:
-        right = kwargs["_below"]
+    if "Below" in kwargs: 
+        valuebelow=4
+        right = kwargs["Below"]
         if right is None or value < right:
             bool_right = True
         else:
             bool_right = False
-    elif "_to" in kwargs:
-        right = kwargs["_to"]
+    elif "To" in kwargs:
+        right = kwargs["To"]
         if right is None or value <= right:
             bool_right = True
         else:
@@ -434,8 +436,12 @@ if __name__ == "__main__":
         agg_features[f'customer_{cid}_count_sales'] = nr_of_sales
 
     print(sorted(agg_features))
-    print(value_within(6,_above=4, _to=None))
-    print(value_within(4,**{"_above": None, "_to":5}))
+    print(value_within(6,Above=4, To=None))
+    print(value_within(4,**{"Above": None, "To":5}))
+    rules = [
+         {"Above": None, "To": 0},
+         ["Above": 0, "To": 1}]
+    ]
 
     
 
